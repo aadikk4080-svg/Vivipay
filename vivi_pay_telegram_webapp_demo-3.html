@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>VIVI PAY — Telegram WebApp Demo</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#fff;color:#111}
+body{display:flex;justify-content:center}
+.app{width:100%;max-width:430px;min-height:100vh;padding:34px 18px 24px;position:relative}
+.logo{
+  width:145px;height:145px;border-radius:50%;margin:0 auto;
+  display:flex;align-items:center;justify-content:center;
+  background:
+    radial-gradient(circle at 32% 22%,#3d578b 0 13%,transparent 14%),
+    linear-gradient(145deg,#173b73,#031b46);
+  border:7px solid #d7d7d7;
+  box-shadow:0 2px 7px #999, inset 0 0 0 2px #8e8e8e;
+  color:white;text-align:center;position:relative;overflow:hidden;
+}
+.logo:after{
+ content:"";position:absolute;left:-10%;right:-10%;bottom:17px;height:55px;
+ background:repeating-linear-gradient(168deg,transparent 0 8px,#2ca5ed 9px 12px,transparent 13px 20px);
+ transform:skewY(-8deg);opacity:.95
+}
+.logoText{position:relative;z-index:2;font-weight:800;line-height:.86}
+.logoText b{font-size:43px;letter-spacing:1px}
+.logoText span{font-size:24px;display:block;margin-top:9px}
+.form{margin-top:175px}
+.field{
+ height:70px;border-radius:38px;background:#f8f9fc;
+ display:flex;align-items:center;padding:0 25px;margin-bottom:14px;
+ box-shadow:0 2px 5px rgba(0,0,0,.03)
+}
+.icon{width:30px;color:#2789e8;font-size:30px;margin-right:17px;text-align:center}
+.field input{border:0;outline:0;background:transparent;width:100%;font-size:23px;color:#222}
+.field input::placeholder{color:#c8cbd3}
+.options{display:flex;align-items:center;justify-content:space-between;padding:4px 10px 0;color:#287ed0;font-size:18px}
+.check{display:inline-flex;align-items:center;gap:10px}
+.circleCheck{width:29px;height:29px;border-radius:50%;background:#238be8;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:18px}
+.forgot{border:0;background:none;color:#287ed0;font-size:18px}
+.login{
+ width:100%;height:66px;margin-top:75px;border:0;border-radius:15px;
+ background:#258cf0;color:#fff;font-size:28px;font-weight:700
+}
+.agree{display:flex;align-items:center;justify-content:center;gap:10px;color:#287ed0;font-size:15px;margin-top:8px}
+.agree a{text-decoration:underline;color:#287ed0}
+.hidden{display:none}
+
+/* OTP modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.57);display:none;align-items:center;justify-content:center;padding:20px;z-index:20}
+.modal{width:min(100%,635px);background:#fff;border-radius:13px;padding:27px 30px 31px;position:relative;text-align:center}
+.close{position:absolute;right:25px;top:24px;border:0;background:none;color:#8b929b;font-size:34px;font-weight:200}
+.modal h2{font-size:30px;font-weight:400;margin:32px 0 18px}
+.masked{font-size:22px;color:#9297a0;margin-bottom:50px}
+.otp{display:flex;justify-content:center;gap:18px}
+.otp input{width:76px;height:65px;border:0;border-bottom:1px solid #333;outline:0;text-align:center;font-size:30px}
+.resend{margin-top:28px;color:#d9dbe0;font-size:20px}
+.demo-note{font-size:12px;color:#999;margin-top:18px}
+.success{display:none;color:#168447;font-size:19px;margin-top:25px}
+@media(max-width:380px){
+ .form{margin-top:130px}.logo{width:125px;height:125px}.logoText b{font-size:36px}.logoText span{font-size:20px}
+ .field{height:62px}.field input{font-size:19px}.login{margin-top:55px}
+ .otp{gap:9px}.otp input{width:45px}
+}
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="logo"><div class="logoText"><b>VIVI</b><span>PAY</span></div></div>
+
+  <section class="form">
+    <div class="field">
+      <div class="icon">▣</div>
+      <input id="phone" type="tel" inputmode="numeric" maxlength="15" placeholder="Enter phone number" autocomplete="off">
+    </div>
+    <div class="field">
+      <div class="icon">♙</div>
+      <input id="password" type="password" placeholder="Enter password" autocomplete="off">
+    </div>
+
+    <div class="options">
+      <div class="check"><span class="circleCheck">✓</span>Save Password</div>
+      <button class="forgot" type="button">Forgot password</button>
+    </div>
+
+    <button class="login" id="loginBtn">Login</button>
+
+    <div class="agree">
+      <span class="circleCheck">✓</span>
+      <span>Agree <a href="#" onclick="return false">"User Privacy Agreement"</a></span>
+    </div>
+  </section>
+</main>
+
+<div class="overlay" id="otpOverlay">
+  <div class="modal">
+    <button class="close" id="closeBtn">×</button>
+    <h2>Please enter OTP</h2>
+    <div class="masked" id="maskedPhone">OTP sent to ••••••••••</div>
+
+    <div class="otp">
+      <input maxlength="1" inputmode="numeric">
+      <input maxlength="1" inputmode="numeric">
+      <input maxlength="1" inputmode="numeric">
+      <input maxlength="1" inputmode="numeric">
+      <input maxlength="1" inputmode="numeric">
+      <input maxlength="1" inputmode="numeric">
+    </div>
+
+    <div class="resend" id="timer">Resend in 117 seconds</div>
+    <div class="demo-note">UI DEMO — no real OTP is sent or collected.</div>
+    <div class="success" id="success">Demo OTP accepted ✓</div>
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+const phone = document.getElementById('phone');
+const password = document.getElementById('password');
+const overlay = document.getElementById('otpOverlay');
+const masked = document.getElementById('maskedPhone');
+const inputs = [...document.querySelectorAll('.otp input')];
+const timer = document.getElementById('timer');
+
+document.getElementById('loginBtn').addEventListener('click', () => {
+  // Demo only: credentials are not sent anywhere.
+  const p = phone.value.replace(/\D/g,'');
+  if (!p) { phone.focus(); return; }
+  masked.textContent = 'OTP sent to ' + maskPhone(p);
+  overlay.style.display = 'flex';
+  inputs.forEach(i => i.value = '');
+  inputs[0].focus();
+  startTimer();
+});
+
+function maskPhone(p) {
+  if (p.length <= 4) return '••••';
+  return '••••••' + p.slice(-4);
+}
+
+inputs.forEach((input, i) => {
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/\D/g,'').slice(0,1);
+    if (input.value && i < inputs.length-1) inputs[i+1].focus();
+    if (inputs.every(x => x.value)) {
+      document.getElementById('success').style.display = 'block';
+    }
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && !input.value && i > 0) inputs[i-1].focus();
+  });
+});
+
+document.getElementById('closeBtn').onclick = () => overlay.style.display = 'none';
+
+let interval;
+function startTimer() {
+  clearInterval(interval);
+  let n = 117;
+  timer.textContent = 'Resend in ' + n + ' seconds';
+  interval = setInterval(() => {
+    n--;
+    timer.textContent = n > 0 ? 'Resend in ' + n + ' seconds' : 'Resend OTP';
+    if (n <= 0) clearInterval(interval);
+  }, 1000);
+}
+</script>
+</body>
+</html>
